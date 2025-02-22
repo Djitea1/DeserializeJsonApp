@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Deserialized JSON</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" 
+        crossorigin="anonymous">
+</head>
+<body>
+  <div class="container mt-5">
+    <h1>Deserialized JSON</h1>
+    <div class="mb-3">
+      <label for="thresholdInput" class="form-label">Lowest Confidence Threshold:</label>
+      <input type="number" step="0.01" id="thresholdInput" class="form-control" placeholder="Enter threshold (e.g., 0.5)" value="0.5">
+      <button id="updateViewButton" class="btn btn-primary mt-2">Update View</button>
+    </div>
+    <h4>Lowest Confidence: <%= lowestConfidence !== null ? lowestConfidence : 'Not provided' %></h4>
+    <h3>Header Information</h3>
+    <table class="table table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>Field</th>
+          <th>Value</th>
+          <th>Confidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% for (let key in header) { %>
+          <tr>
+            <td><%= key %></td>
+            <td><%= header[key].value !== null ? header[key].value : "" %></td>
+            <td><%= header[key].confidence !== null ? header[key].confidence : "" %></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+    <!-- Place the low confidence summary here, outside any table -->
+    <%
+      let lowConfidenceRows = [];
+      detailRows.forEach(function(row, index) {
+        let rowMin = 1;
+        detailColumns.forEach(function(col) {
+          if (row[col].confidence < rowMin) { rowMin = row[col].confidence; }
+        });
+        if (rowMin < 0.5) {
+          lowConfidenceRows.push(index + 1);
+        }
+      });
+    %>
+    <div id="lowConfidenceList" class="alert alert-warning" role="alert">
+      <strong>Rows with low confidence (< 0.5):</strong> <%= lowConfidenceRows.join(', ') %>
+    </div>
+    <h3>Detail Rows</h3>
+    <% // Define the fixed columns you always want to display %>
+    <% const fixedColumns = ["PersonalIdentityNumber", "Name", "EmployeeNumber", "MembershipDue", "Insurance"]; %>
+    <table id="detailTable" class="table table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <% detailColumns.forEach(function(col) { %>
+            <th><%= col %> (Value / Confidence)</th>
+          <% }); %>
+          <th>Lowest Row Confidence</th>
+        </tr>
+      </thead>
+    <tbody>
+      <% detailRows.forEach(function(row, index) { %>
+        <tr id="row-<%= index + 1 %>">
+          <td><%= index + 1 %></td>
+          <% let rowMin = 1; %>
+          <% detailColumns.forEach(function(col) { %>
+            <% if (row[col].confidence < rowMin) { rowMin = row[col].confidence; } %>
+            <td data-confidence="<%= row[col].confidence %>">
+              <strong>Value:</strong> <%= row[col].value %><br>
+              <strong>Confidence:</strong> <span class="confidenceValue"><%= row[col].confidence %></span>
+            </td>
+          <% }); %>
+          <td class="lowestRowCell"><%= rowMin %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+    </table>
+    <div class="mt-3">
+        <a href="/deserialize" class="btn btn-secondary">Back to JSON Input</a>
+        <a href="/upload" class="btn btn-secondary">Upload new file</a>
+        <a href="/" class="btn btn-secondary">Back to Home</a>
+      </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      function updateView(threshold) {
+        if (isNaN(threshold)) {
+          alert("Please enter a valid decimal number.");
+          return;
+        }
+        
+        const rows = document.querySelectorAll("#detailTable tbody tr");
+        let lowConfidenceRowNumbers = [];
+        
+        rows.forEach(function(row, index) {
+          let minConfidence = 1;
+          const cells = row.querySelectorAll("td[data-confidence]");
+          
+          cells.forEach(function(cell) {
+            const conf = parseFloat(cell.getAttribute("data-confidence"));
+            if (conf < minConfidence) { 
+              minConfidence = conf;
+            }
+            if (conf < threshold) {
+              cell.classList.add("bg-danger", "bg-opacity-25");
+            } else {
+              cell.classList.remove("bg-danger", "bg-opacity-25");
+            }
+          });
+          
+          const lowestCell = row.querySelector("td.lowestRowCell");
+          if (lowestCell) {
+            lowestCell.textContent = minConfidence.toFixed(2);
+            if (minConfidence < threshold) {
+              lowestCell.classList.add("bg-danger", "bg-opacity-25");
+              lowConfidenceRowNumbers.push(index + 1);
+            } else {
+              lowestCell.classList.remove("bg-danger", "bg-opacity-25");
+            }
+          }
+        });
+        
+        const lowConfList = document.getElementById("lowConfidenceList");
+        if (lowConfList) {
+          // Create clickable links for each row number
+          const clickableRows = lowConfidenceRowNumbers.map(num => 
+            `<a href="#row-${num}" onclick="document.getElementById('row-${num}').scrollIntoView({behavior: 'smooth'}); return false;">${num}</a>`
+          ).join(', ');
+          lowConfList.innerHTML = `<strong>Rows with low confidence (< ${threshold}):</strong> ${clickableRows}`;
+        }
+      }
+  
+      const updateButton = document.getElementById("updateViewButton");
+      if (updateButton) {
+        updateButton.addEventListener("click", function() {
+          const threshold = parseFloat(document.getElementById("thresholdInput").value);
+          updateView(threshold);
+        });
+      }
+  
+      updateView(0.5);
+    });
+  </script>
+</body>
+</html>

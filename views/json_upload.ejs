@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Upload JSON File</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" 
+        crossorigin="anonymous">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, private">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+</head>
+<body>
+  <div class="container mt-5">
+    <h1>Upload JSON File</h1>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label for="jsonFile" class="form-label">Select JSON File:</label>
+        <input type="file" id="jsonFile" name="jsonFile" accept=".json" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Upload and Deserialize</button>
+    </form>
+    <a href="/" class="btn btn-secondary mt-3">Back to Home</a>
+  </div>
+</body>
+</html>
